@@ -30,6 +30,7 @@ def request(url, query, variables):
             print(f"HTTP Error: {response.status_code}, Response: {response.text}")
 
 
+# функция для собирание данных об товаре в массив для будущего JSON
 def product_answer(product, properties_request_data, document_request_data, rating_request_data, products_data):
     product_id = product['id']
     product_url = f"https://www.citilink.ru/product/{product['slug']}-{product['id']}/"
@@ -115,6 +116,8 @@ def product_answer(product, properties_request_data, document_request_data, rati
     return products_data
     pass
 
+
+# функция для собирание данных об ретинге в массив для будущего JSON
 def rating_answer(rating_request_data, product_id, rating_data):
     for rating in rating_request_data['data']['product_b6304_d984e']['opinions_03450_55993']['payload']['items']:
         rating_info = {
@@ -133,6 +136,8 @@ def rating_answer(rating_request_data, product_id, rating_data):
     return rating_data
 
 
+
+# функция для собирание данных об обзорах в массив для будущего JSON
 def review_answer(review_request_data, product_id, review_data):
     for review in review_request_data['data']['product_b6304_839cf']['reviews_b6834_ed052']['items']:
         review_info = {
@@ -148,6 +153,8 @@ def review_answer(review_request_data, product_id, review_data):
         }
         review_data.append(review_info)
     return review_data
+
+
 
 # Основная функция
 def fetch_products():
