@@ -6,6 +6,13 @@ from request_handler import request
 from queries import (url, PROPERTIES_QUERY, DOCUMENTS_QUERY, RATING_QUERY, REVIEW_QUERY, 
                      PROPERTIES_OR_DOCUMENTS_VARIABLE, RATING_VARIABLE, REVIEW_VARIABLE)
 
+def find_key_by_prefix(data, prefix):
+    if isinstance(data, dict):
+        for key in data.keys():
+            if key.startswith(prefix):
+                return key
+    return None
+
 # Функция для собирание данных об товаре в массив для будущего JSON
 def product_answer(product, first_product):
 
@@ -74,9 +81,13 @@ def product_answer(product, first_product):
         documents_data.append(attachments['url'])
 
     rating_request_data = request(url, RATING_QUERY, RATING_VARIABLE(product['id'], 1), f"рейтинга товара ID: {product['id']}")
-    product_rating = rating_request_data['data']['product_b6304_d984e']['opinions_03450_55993']['payload']['summary']['rating']
+
+    product_key = find_key_by_prefix(rating_request_data['data'], 'product_')
+    opinions_key = find_key_by_prefix(rating_request_data['data'][product_key], 'opinions_')
+    
+    product_rating = rating_request_data['data'][product_key][opinions_key]['payload']['summary']['rating']
     product_rating_count = 0
-    for rating in rating_request_data['data']['product_b6304_d984e']['opinions_03450_55993']['payload']['summary']['ratingCounters']:
+    for rating in rating_request_data['data'][product_key][opinions_key]['payload']['summary']['ratingCounters']:
         product_rating_count += rating['count']
 
     product_info = {
@@ -113,7 +124,10 @@ def rating_answer(product_id, first_rating):
 
         rating_request_data = request(url, RATING_QUERY, RATING_VARIABLE(product_id, current_page_rating), f"рейтинга товара ID: {product_id}")
 
-        for rating in rating_request_data['data']['product_b6304_d984e']['opinions_03450_55993']['payload']['items']:
+        product_key = find_key_by_prefix(rating_request_data['data'], 'product_')
+        opinions_key = find_key_by_prefix(rating_request_data['data'][product_key], 'opinions_')
+
+        for rating in rating_request_data['data'][product_key][opinions_key]['payload']['items']:
             rating_info = {
                 'product_id': product_id,
                 'id': rating['id'],
@@ -134,7 +148,7 @@ def rating_answer(product_id, first_rating):
                 json.dump(rating_info, f, ensure_ascii=False, indent=4)
                 first_rating = False
         
-        has_next_page_rating = rating_request_data['data']['product_b6304_d984e']['opinions_03450_55993']['pageInfo']['hasNextPage']
+        has_next_page_rating = rating_request_data['data'][product_key][opinions_key]['pageInfo']['hasNextPage']
         current_page_rating += 1
     return first_rating
 
@@ -143,11 +157,17 @@ def rating_answer(product_id, first_rating):
 def review_answer(product_id, first_review):
     current_page_review = 1
     has_next_page_review = True
-    review_data = []
+
     while has_next_page_review:
+
         logging.info(f"Обработка страницы с обзорами продукта ID: {product_id} №{current_page_review}")
+
         review_request_data = request(url, REVIEW_QUERY, REVIEW_VARIABLE(product_id, current_page_review), f"обзоров товара ID: {product_id}")
-        for review in review_request_data['data']['product_b6304_839cf']['reviews_b6834_ed052']['items']:
+
+        product_key = find_key_by_prefix(review_request_data['data'], 'product_')
+        reviews_key = find_key_by_prefix(review_request_data['data'][product_key], 'reviews_')
+
+        for review in review_request_data['data'][product_key][reviews_key]['items']:
             review_info = {
                 'product_id': product_id,
                 'id': review['id'],
@@ -165,6 +185,6 @@ def review_answer(product_id, first_review):
                     f.write(',\n')
                 json.dump(review_info, f, ensure_ascii=False, indent=4)
                 first_review = False
-        has_next_page_review = review_request_data['data']['product_b6304_839cf']['reviews_b6834_ed052']['pageInfo']['hasNextPage']
+        has_next_page_review = review_request_data['data'][product_key][reviews_key]['pageInfo']['hasNextPage']
         current_page_review += 1
     return first_review
