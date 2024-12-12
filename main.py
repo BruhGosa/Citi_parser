@@ -1,13 +1,16 @@
 import time
 import logging
+import os
 from lxml import html
+from dotenv import load_dotenv
 from request_handler import request
 from queries import (url, PRODUCTS_QUERY, PRODUCT_VARIABLE)
 from data_processors import product_answer, rating_answer, review_answer
 
+load_dotenv()
 
 # Переменая для выбора категории
-category = "frezery"
+category = os.getenv('CATEGORY')
 
 # В начале файла добавляем настройку логирования
 logging.basicConfig(
